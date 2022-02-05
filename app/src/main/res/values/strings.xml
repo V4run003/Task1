@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Task1</string>
+    <string name="accessibility_service_description">Service for getting current app name</string>
+</resources>
