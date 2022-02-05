@@ -61,10 +61,6 @@ class BackgroundService : AccessibilityService() {
                                 currentActivity,
                                 false
                             )
-                            var timesOpened = prefs.getInt(
-                                "$currentActivity+timesopened",
-                                0
-                            )
                             if (!isfirst) {
                                 val df: DateFormat = SimpleDateFormat(" dd/mm/yyyy  HH:mm")
                                 val date: String = df.format(Calendar.getInstance().time)
