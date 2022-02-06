@@ -1,12 +1,20 @@
 package com.nxet.task1
 
+
+import android.R.attr.thumb
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.AlertDialog
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
@@ -14,6 +22,8 @@ import android.view.View
 import android.view.accessibility.AccessibilityManager
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -23,6 +33,8 @@ import com.nxet.task1.Models.AppModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import java.util.*
+import kotlin.collections.ArrayList
 
 
 class MainActivity : AppCompatActivity(), RecyclerItemClick {
@@ -34,6 +46,7 @@ class MainActivity : AppCompatActivity(), RecyclerItemClick {
     private lateinit var nocontent: RelativeLayout
 
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -41,6 +54,7 @@ class MainActivity : AppCompatActivity(), RecyclerItemClick {
         socialList.add("com.twitter.android")
         socialList.add("com.whatsapp")
         socialList.add("com.snapchat.android")
+
 
         recyclerView = findViewById(R.id.main_recyclerView)
         accessibilityToggle = findViewById(R.id.accessibility_service_toggle)
@@ -150,10 +164,84 @@ class MainActivity : AppCompatActivity(), RecyclerItemClick {
         return false
     }
 
+    override fun onPause() {
+        super.onPause()
+
+    }
+
     override fun onResume() {
+        super.onResume()
+
         val enabled = isAccessibilityServiceEnabled(this, BackgroundService::class.java)
         accessibilityToggle.isChecked = enabled
-        super.onResume()
+
+
+        registerReceiver(object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                Log.d("used", intent.extras!!.getString("usedagain")!!)
+                Log.d("used", intent.extras!!.getString("usedagaintime")!!)
+                setNotification(intent.extras!!.getString("usedagain")!!,intent.extras!!.getString("usedagaintime")!!)
+            }
+        }, IntentFilter(packageName + "service_used"))
+
+
     }
+
+
+
+    private fun setNotification(string: String, string1: String) {
+        val intent = Intent(applicationContext, MainActivity::class.java)
+        val pIntent = PendingIntent.getActivity(
+            applicationContext,
+            System.currentTimeMillis().toInt(), intent, 0
+        )
+
+        val appName = packageManager.getApplicationLabel(
+            packageManager.getApplicationInfo(
+                string,
+                PackageManager.GET_META_DATA
+            )
+        ) as String
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel1 =
+                NotificationChannel("Channel 1", "Channel(1)", NotificationManager.IMPORTANCE_HIGH)
+            channel1.description = "Channel 1 Dec.."
+            val notificationManager = getSystemService(
+                NotificationManager::class.java
+            )
+            notificationManager.createNotificationChannel(channel1)
+        }
+
+
+        val notification: NotificationCompat.Builder =
+            NotificationCompat.Builder(this,"Channel 1")
+                .setSmallIcon(R.drawable.ic_baseline_notifications_active_24)
+                .setContentTitle("$appName opened again")
+                .setContentIntent(pIntent)
+                .setContentText("Last opened on $string1")
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+
+        notification.setSmallIcon(R.drawable.ic_baseline_notifications_active_24)
+        notification.color = resources.getColor(R.color.white)
+        val notificationManager = NotificationManagerCompat.from(
+            applicationContext
+        )
+
+        notificationManager.notify(((Date().getTime() / 1000L % Int.MAX_VALUE).toInt()), notification.build())
+
+
+
+
+
+
+    }
+
+
+
+
+
+
 
 }

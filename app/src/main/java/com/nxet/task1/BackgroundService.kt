@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.annotation.SuppressLint
 import android.content.ComponentName
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.view.accessibility.AccessibilityEvent
@@ -20,6 +21,7 @@ class BackgroundService : AccessibilityService() {
     private var change: String = ""
     private var i: Int = 0
     private var USETIME_PREF = "usetimeprefs"
+
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -54,6 +56,10 @@ class BackgroundService : AccessibilityService() {
                     val separated: Array<String> = name.split("/").toTypedArray()
                     val currentActivity = separated[0]
                     if (currentActivity != change) {
+                        val first = Intent(packageName + "service_first")
+                        val used = Intent(packageName + "service_used")
+
+
                         change = currentActivity
                         if (socialList.contains(currentActivity)) {
                             val prefs = getSharedPreferences(USETIME_PREF, MODE_PRIVATE)
@@ -70,6 +76,8 @@ class BackgroundService : AccessibilityService() {
                                 editor.putString("$currentActivity+used", date)
                                 editor.apply()
                                 Toast.makeText(this, "First time opened", Toast.LENGTH_SHORT).show()
+                                first.putExtra("firstopen", currentActivity)
+                                this.sendBroadcast(first)
                             } else {
                                 val prefs = getSharedPreferences(USETIME_PREF, MODE_PRIVATE)
                                 val date = prefs.getString(
@@ -86,6 +94,10 @@ class BackgroundService : AccessibilityService() {
                                 editor.putString("$currentActivity+used", date2)
                                 editor.putInt("$currentActivity+timesopened", opened + 1)
                                 editor.apply()
+                                used.putExtra("usedagain", currentActivity)
+                                used.putExtra("usedagaintime", date2)
+                                this.sendBroadcast(used)
+
                                 Toast.makeText(
                                     this,
                                     "opened before at $date total $opened times opened",
